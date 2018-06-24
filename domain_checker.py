@@ -1,33 +1,37 @@
-#-*- coding: utf-8 -*-
-import subprocess
+#!/usr/bin/env python3
+#whois and dig utilities are required 
+from subprocess import getoutput
 import time
+from datetime import datetime
 from random import randint
 
-#import domain list to check from 'source_list.txt' file
-with open('source_list.txt') as f:
+with open('3char_domain_list.txt') as f:
     char = f.read().splitlines()
 data = ''
 
 
 for line in char:
-    print('testing {0}'.format(line))
-    while True:
-        bash = str(subprocess.getoutput('whois {0}'.format(line)))
-        # make sure that your limit statement looks identical to the one in the if statemant below 
-        if ('request limit exceeded' in bash):
-            print('\nrequest limit exceeded, sleep few seconds')
-            time.sleep(randint(450, 750))
-        else:
-            #check and modify your statement for unregistered domain
-            if ('No information available about domain name' in bash):
+    print('\n\n\nTesting {0} domain'.format(line))
+    bash = str(getoutput('dig soa {0}'.format(line)))
+
+    if ('a-dns.pl. dnsmaster.nask.pl.' not in bash):
+        print('\n{0} registered'.format(line))
+
+    else:
+        while True:
+            d = datetime.now().isoformat()
+            bash = str(getoutput('whois {0}'.format(line)))
+            if ('request limit exceeded' in bash):
+                print('\nRequest limit exceeded, sleep few seconds    {0}'.format(d))
+                time.sleep(randint(450, 750))
+
+            elif ('No information available about domain name' in bash):
                 data += line + '\n'
                 with open('domain_list.txt', 'w') as f:
                     f.write(data)
-                print('\ndomain found\nadded to domain_list.txt')
+                print('\n{0} DOMAIN NOT REGISTERED    {1}'.format(line, d))
                 break
+
             else:
-                print('Domain registered')
+                print('\n{0} registered    {1}'.format(line, d))
                 break
-    time.sleep(randint(20, 60))
-
-
